@@ -15,6 +15,9 @@ setup(
     packages=find_packages(),
     python_requires=">=3.9",
     install_requires=[],  # zero dependencies — this is the whole point
+    extras_require={
+        "dev": ["pytest>=8", "ruff>=0.6"],
+    },
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",

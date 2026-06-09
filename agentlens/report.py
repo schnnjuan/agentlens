@@ -4,6 +4,8 @@ agentlens/report.py
 Generate human-readable audit reports from the log database.
 """
 
+from __future__ import annotations
+
 from datetime import datetime, timezone
 
 from .audit import AuditLog
