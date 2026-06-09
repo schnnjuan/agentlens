@@ -4,11 +4,12 @@ agentlens/report.py
 Generate human-readable audit reports from the log database.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
+
 from .audit import AuditLog
 
 
-def generate_report(audit: AuditLog, agent: str = None) -> str:
+def generate_report(audit: AuditLog, agent: str | None = None) -> str:
     """
     Generate a plain-text audit report for one agent (or all agents).
 
@@ -17,7 +18,7 @@ def generate_report(audit: AuditLog, agent: str = None) -> str:
         print(generate_report(audit, agent="email-agent"))
     """
     lines = []
-    now   = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
     lines.append("=" * 60)
     lines.append("  AGENTLENS — AUDIT REPORT")
@@ -44,9 +45,9 @@ def generate_report(audit: AuditLog, agent: str = None) -> str:
         if history:
             lines.append(f"\n  Last {len(history)} events:")
             lines.append(f"  {'Timestamp':<26} {'Status':<8} {'Action':<25} Result")
-            lines.append(f"  {'-'*26} {'-'*8} {'-'*25} ------")
+            lines.append(f"  {'-' * 26} {'-' * 8} {'-' * 25} ------")
             for ev in history:
-                ts     = ev["ts"][:19]
+                ts = ev["ts"][:19]
                 status = ev["status"].upper()
                 action = ev["action"][:24]
                 result = ev["result"][:50]
@@ -56,19 +57,19 @@ def generate_report(audit: AuditLog, agent: str = None) -> str:
     return "\n".join(lines)
 
 
-def generate_markdown_report(audit: AuditLog, agent: str = None) -> str:
+def generate_markdown_report(audit: AuditLog, agent: str | None = None) -> str:
     """Same as generate_report but in Markdown (useful for GitHub issues, Notion, etc.)"""
-    now    = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     agents = [agent] if agent else audit.agents()
-    lines  = [f"# 🔍 AgentLens Audit Report\n_Generated: {now}_\n"]
+    lines = [f"# 🔍 AgentLens Audit Report\n_Generated: {now}_\n"]
 
     for ag in agents:
         summary = audit.summary(ag)
         history = audit.history(ag, limit=10)
 
         lines.append(f"## Agent: `{ag}`")
-        lines.append(f"| Metric | Value |")
-        lines.append(f"|--------|-------|")
+        lines.append("| Metric | Value |")
+        lines.append("|--------|-------|")
         lines.append(f"| Total actions | {summary['total_actions']} |")
         lines.append(f"| Errors | {summary['errors']} |")
         lines.append(f"| Success rate | {summary['success_rate']} |")

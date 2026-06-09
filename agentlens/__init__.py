@@ -10,8 +10,8 @@ Quick start:
     print(audit.summary("my-agent"))
 """
 
-from .audit  import AuditLog
-from .report import generate_report, generate_markdown_report
+from .audit import AuditLog
+from .report import generate_markdown_report, generate_report
 
 __version__ = "0.1.0"
-__all__     = ["AuditLog", "generate_report", "generate_markdown_report"]
+__all__ = ["AuditLog", "generate_report", "generate_markdown_report"]

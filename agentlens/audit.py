@@ -4,10 +4,12 @@ agentlens/audit.py
 Core audit logging for AI agents. Zero external dependencies.
 """
 
+from __future__ import annotations
+
 import sqlite3
-from datetime import datetime
 from contextlib import contextmanager
-from typing import Optional
+from datetime import datetime, timezone
+from typing import Any
 
 
 class AuditLog:
@@ -76,7 +78,7 @@ class AuditLog:
             cur = c.execute(
                 "INSERT INTO events (ts, agent, action, result, status, metadata) "
                 "VALUES (?,?,?,?,?,?)",
-                (datetime.utcnow().isoformat(), agent, action, result, status, metadata),
+                (datetime.now(timezone.utc).isoformat(), agent, action, result, status, metadata),
             )
             return cur.lastrowid
 
@@ -84,7 +86,7 @@ class AuditLog:
     # Read
     # ---------------------------------------------------------------
 
-    def history(self, agent: Optional[str] = None, limit: int = 100) -> list[dict]:
+    def history(self, agent: str | None = None, limit: int = 100) -> list[dict[str, str]]:
         """Return recent events, newest first."""
         with self._conn() as c:
             if agent:
@@ -102,10 +104,10 @@ class AuditLog:
         keys = ("ts", "agent", "action", "result", "status", "metadata")
         return [dict(zip(keys, r)) for r in rows]
 
-    def summary(self, agent: str) -> dict:
+    def summary(self, agent: str) -> dict[str, Any]:
         """Return a quick health summary for one agent."""
         with self._conn() as c:
-            total  = c.execute("SELECT COUNT(*) FROM events WHERE agent=?", (agent,)).fetchone()[0]
+            total = c.execute("SELECT COUNT(*) FROM events WHERE agent=?", (agent,)).fetchone()[0]
             errors = c.execute(
                 "SELECT COUNT(*) FROM events WHERE agent=? AND status='error'", (agent,)
             ).fetchone()[0]
@@ -114,11 +116,11 @@ class AuditLog:
             ).fetchone()
 
         return {
-            "agent":        agent,
+            "agent": agent,
             "total_actions": total,
-            "errors":        errors,
-            "success_rate":  f"{(total - errors) / total * 100:.1f}%" if total else "0%",
-            "last_seen":     last_ts[0] if last_ts else None,
+            "errors": errors,
+            "success_rate": f"{(total - errors) / total * 100:.1f}%" if total else "0%",
+            "last_seen": last_ts[0] if last_ts else None,
         }
 
     def agents(self) -> list[str]:
@@ -127,7 +129,7 @@ class AuditLog:
             rows = c.execute("SELECT DISTINCT agent FROM events").fetchall()
         return [r[0] for r in rows]
 
-    def clear(self, agent: Optional[str] = None) -> int:
+    def clear(self, agent: str | None = None) -> int:
         """Delete logs. Pass agent name to delete only that agent. Returns rows deleted."""
         with self._conn() as c:
             if agent:
